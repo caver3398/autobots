@@ -8,6 +8,7 @@ const stylus = require('stylus');
 
 const index = require('./routes/index');
 const panel = require('./routes/panel');
+const download = require('./routes/download');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', index);
 app.use('/panel', panel);
+app.use('/download', download);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

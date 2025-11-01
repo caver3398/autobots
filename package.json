@@ -7,7 +7,8 @@
     "test": "jshint **/*.js",
     "generate-video": "node generate-f1-video.js",
     "add-music": "node add-music.js",
-    "variations": "node generate-variations.js"
+    "variations": "node generate-variations.js",
+    "check-downloads": "node test-download.js"
   },
   "dependencies": {
     "body-parser": "~1.17.1",
