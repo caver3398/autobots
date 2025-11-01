@@ -1,0 +1,150 @@
+doctype html
+html(lang='es')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title= title
+    link(rel='stylesheet', href='/stylesheets/ventas.css')
+  body
+    // Sección Hero
+    section#hero.hero
+      .container
+        .hero-content
+          h1.hero-title= config.hero.titulo
+          p.hero-subtitle= config.hero.subtitulo
+          a.btn.btn-primary(href=config.hero.botonLink)= config.hero.botonTexto
+        .hero-image
+          .placeholder-image 🚀
+
+    // Sección Características
+    section#caracteristicas.features
+      .container
+        h2.section-title Características Principales
+        .features-grid
+          each feature in config.caracteristicas
+            .feature-card
+              .feature-icon= feature.icono
+              h3.feature-title= feature.titulo
+              p.feature-description= feature.descripcion
+
+    // Sección Planes
+    section#planes.pricing
+      .container
+        h2.section-title Elige tu Plan
+        .pricing-grid
+          each plan in config.planes
+            .pricing-card(class=plan.destacado ? 'destacado' : '')
+              if plan.destacado
+                .badge Popular
+              h3.plan-name= plan.nombre
+              .plan-price
+                span.price= plan.precio
+                span.period= plan.periodo
+              ul.plan-features
+                each caracteristica in plan.caracteristicas
+                  li
+                    span.check ✓
+                    = caracteristica
+              a.btn(class=plan.destacado ? 'btn-primary' : 'btn-secondary', href='#contacto')= plan.botonTexto
+
+    // Sección Testimonios
+    section#testimonios.testimonials
+      .container
+        h2.section-title Lo que Dicen Nuestros Clientes
+        .testimonials-grid
+          each testimonio in config.testimonios
+            .testimonial-card
+              .testimonial-avatar= testimonio.avatar
+              p.testimonial-text "#{testimonio.texto}"
+              .testimonial-author
+                strong= testimonio.nombre
+                span= testimonio.empresa
+
+    // Sección CTA
+    section.cta
+      .container
+        h2.cta-title= config.cta.titulo
+        p.cta-subtitle= config.cta.subtitulo
+        a.btn.btn-primary.btn-large(href=config.cta.botonLink)= config.cta.botonTexto
+
+    // Sección Contacto
+    section#contacto.contact
+      .container
+        h2.section-title= config.contacto.titulo
+        p.contact-subtitle= config.contacto.subtitulo
+        form#contactForm.contact-form
+          .form-group
+            label(for='nombre')= config.contacto.campos.nombre
+            input#nombre.form-input(type='text', name='nombre', required)
+          .form-group
+            label(for='email')= config.contacto.campos.email
+            input#email.form-input(type='email', name='email', required)
+          .form-group
+            label(for='telefono')= config.contacto.campos.telefono
+            input#telefono.form-input(type='tel', name='telefono')
+          .form-group
+            label(for='mensaje')= config.contacto.campos.mensaje
+            textarea#mensaje.form-input(name='mensaje', rows='5', required)
+          button.btn.btn-primary(type='submit')= config.contacto.botonEnviar
+        #formMessage.form-message
+
+    // Footer
+    footer.footer
+      .container
+        p= config.footer.textoDerechos
+        .footer-links
+          each enlace in config.footer.enlaces
+            a(href=enlace.url)= enlace.texto
+
+    // JavaScript para el formulario
+    script.
+      document.getElementById('contactForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+          nombre: document.getElementById('nombre').value,
+          email: document.getElementById('email').value,
+          telefono: document.getElementById('telefono').value,
+          mensaje: document.getElementById('mensaje').value
+        };
+        
+        try {
+          const response = await fetch('/ventas/contacto', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+          });
+          
+          const result = await response.json();
+          const messageDiv = document.getElementById('formMessage');
+          
+          if (result.success) {
+            messageDiv.textContent = result.message;
+            messageDiv.className = 'form-message success';
+            document.getElementById('contactForm').reset();
+          } else {
+            messageDiv.textContent = 'Hubo un error. Por favor intenta de nuevo.';
+            messageDiv.className = 'form-message error';
+          }
+        } catch (error) {
+          const messageDiv = document.getElementById('formMessage');
+          messageDiv.textContent = 'Error al enviar el formulario.';
+          messageDiv.className = 'form-message error';
+        }
+      });
+      
+      // Smooth scroll para los enlaces
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });

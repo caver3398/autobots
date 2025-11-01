@@ -1,0 +1,129 @@
+{
+  "hero": {
+    "titulo": "Transforma Tu Negocio Hoy",
+    "subtitulo": "La solución completa que necesitas para aumentar tus ventas y automatizar tu negocio",
+    "botonTexto": "Comenzar Ahora",
+    "botonLink": "#contacto",
+    "imagenUrl": "/images/hero-ventas.jpg"
+  },
+  "caracteristicas": [
+    {
+      "icono": "⚡",
+      "titulo": "Rápido y Eficiente",
+      "descripcion": "Implementación en menos de 24 horas. Comienza a vender inmediatamente."
+    },
+    {
+      "icono": "🔒",
+      "titulo": "100% Seguro",
+      "descripcion": "Protección de datos y transacciones seguras garantizadas."
+    },
+    {
+      "icono": "📱",
+      "titulo": "Responsive",
+      "descripcion": "Funciona perfectamente en móviles, tablets y computadoras."
+    },
+    {
+      "icono": "🎨",
+      "titulo": "Personalizable",
+      "descripcion": "Modifica colores, textos e imágenes fácilmente desde un archivo JSON."
+    },
+    {
+      "icono": "📊",
+      "titulo": "Analytics Incluido",
+      "descripcion": "Seguimiento de ventas y comportamiento de usuarios en tiempo real."
+    },
+    {
+      "icono": "💬",
+      "titulo": "Soporte 24/7",
+      "descripcion": "Equipo de soporte disponible para ayudarte cuando lo necesites."
+    }
+  ],
+  "planes": [
+    {
+      "nombre": "Básico",
+      "precio": "$29",
+      "periodo": "/mes",
+      "caracteristicas": [
+        "Página de ventas personalizada",
+        "Formulario de contacto",
+        "Responsive design",
+        "Soporte por email"
+      ],
+      "destacado": false,
+      "botonTexto": "Elegir Plan"
+    },
+    {
+      "nombre": "Profesional",
+      "precio": "$79",
+      "periodo": "/mes",
+      "caracteristicas": [
+        "Todo lo del plan Básico",
+        "Integración con pasarelas de pago",
+        "Analytics avanzado",
+        "Soporte prioritario 24/7",
+        "Personalización avanzada"
+      ],
+      "destacado": true,
+      "botonTexto": "Más Popular"
+    },
+    {
+      "nombre": "Empresarial",
+      "precio": "$199",
+      "periodo": "/mes",
+      "caracteristicas": [
+        "Todo lo del plan Profesional",
+        "Múltiples páginas de ventas",
+        "API personalizada",
+        "Consultoría mensual",
+        "Soporte dedicado"
+      ],
+      "destacado": false,
+      "botonTexto": "Elegir Plan"
+    }
+  ],
+  "testimonios": [
+    {
+      "nombre": "María González",
+      "empresa": "TechStart",
+      "texto": "Increíble servicio. Nuestras ventas aumentaron un 300% en el primer mes.",
+      "avatar": "👩‍💼"
+    },
+    {
+      "nombre": "Carlos Rodríguez",
+      "empresa": "Digital Solutions",
+      "texto": "La mejor inversión que hemos hecho. Fácil de usar y resultados inmediatos.",
+      "avatar": "👨‍💻"
+    },
+    {
+      "nombre": "Ana Martínez",
+      "empresa": "Creative Agency",
+      "texto": "Soporte excepcional y una plataforma que realmente funciona. Totalmente recomendado.",
+      "avatar": "👩‍🎨"
+    }
+  ],
+  "cta": {
+    "titulo": "¿Listo para Aumentar tus Ventas?",
+    "subtitulo": "Únete a más de 1,000 empresas que ya están creciendo con nosotros",
+    "botonTexto": "Comenzar Gratis",
+    "botonLink": "#contacto"
+  },
+  "contacto": {
+    "titulo": "Contáctanos",
+    "subtitulo": "Completa el formulario y nos pondremos en contacto contigo en menos de 24 horas",
+    "campos": {
+      "nombre": "Nombre completo",
+      "email": "Email",
+      "telefono": "Teléfono",
+      "mensaje": "Mensaje"
+    },
+    "botonEnviar": "Enviar Mensaje"
+  },
+  "footer": {
+    "textoDerechos": "© 2025 Tu Empresa. Todos los derechos reservados.",
+    "enlaces": [
+      { "texto": "Términos y Condiciones", "url": "#" },
+      { "texto": "Política de Privacidad", "url": "#" },
+      { "texto": "Contacto", "url": "#contacto" }
+    ]
+  }
+}
