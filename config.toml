@@ -1,0 +1,102 @@
+# Configuración de la sala de mando. Todo opera EN PAPEL (dinero ficticio).
+
+[general]
+base_de_datos = "sala_de_mando.db"
+intervalo_segundos = 300          # cada cuánto miran el mercado los bots (velas de 5 min)
+respetar_horario_acciones = true  # acciones solo 9:30-16:00 de Nueva York (10:30-17:00 en Argentina, salvo cambios de horario)
+
+[riesgo]
+perdida_diaria_total_max_pct = 3.0  # si la oficina entera pierde 3 % en el día, no se abren más compras
+vencimiento_pendientes_min = 30     # una orden sin tu respuesta vence a los 30 minutos
+
+# --- Salas: qué activos están habilitados y con qué límites ---
+
+[salas.cripto]
+mercado = "cripto"
+moneda = "USDT"
+capital_inicial = 5000
+activos = ["BTC/USDT", "ETH/USDT", "SOL/USDT"]
+orden_max_pct = 10          # ninguna orden supera el 10 % del patrimonio de la sala
+aprobacion_desde_pct = 5    # desde el 5 % la orden espera tu OK
+exposicion_max_pct = 60     # como máximo 60 % invertido, el resto en efectivo
+posiciones_max = 3          # cantidad máxima de activos distintos abiertos
+perdida_diaria_max_pct = 3.0
+comision_pct = 0.1
+deslizamiento_pct = 0.05
+
+[salas.acciones]
+mercado = "acciones"
+moneda = "USD"
+capital_inicial = 5000
+activos = ["SPY", "AAPL", "MSFT", "NVDA"]
+orden_max_pct = 10
+aprobacion_desde_pct = 5
+exposicion_max_pct = 70
+posiciones_max = 4
+perdida_diaria_max_pct = 2.0
+comision_pct = 0.05
+deslizamiento_pct = 0.02
+
+# --- Bots ---
+# habilitacion = "automatico": opera solo, siempre dentro de los límites de la sala.
+# habilitacion = "aprobacion": cada compra espera tu OK (ideal para bots nuevos).
+
+[[bots]]
+nombre = "Tortuga"
+sala = "cripto"
+estrategia = "cruce_medias"
+activos = ["BTC/USDT", "ETH/USDT"]
+tamano_pct = 4
+stop_pct = 3
+habilitacion = "automatico"
+params = { rapida = 10, lenta = 30 }
+
+[[bots]]
+nombre = "Rebote"
+sala = "cripto"
+estrategia = "reversion_rsi"
+activos = ["ETH/USDT", "SOL/USDT"]
+tamano_pct = 4
+stop_pct = 4
+habilitacion = "automatico"
+params = { periodo = 14, compra_bajo = 30, vende_sobre = 55 }
+
+[[bots]]
+nombre = "Halcon"
+sala = "cripto"
+estrategia = "ruptura"
+activos = ["BTC/USDT", "SOL/USDT"]
+tamano_pct = 6
+stop_pct = 3
+habilitacion = "aprobacion"
+params = { entrada = 40, salida = 20 }
+
+[[bots]]
+nombre = "Indice"
+sala = "acciones"
+estrategia = "cruce_medias"
+activos = ["SPY"]
+tamano_pct = 8
+stop_pct = 2
+habilitacion = "automatico"
+params = { rapida = 20, lenta = 50 }
+
+[[bots]]
+nombre = "Paciente"
+sala = "acciones"
+estrategia = "reversion_rsi"
+activos = ["AAPL", "MSFT"]
+tamano_pct = 4
+stop_pct = 3
+habilitacion = "automatico"
+params = { periodo = 14, compra_bajo = 30, vende_sobre = 55 }
+
+[[bots]]
+nombre = "Ruptor"
+sala = "acciones"
+estrategia = "ruptura"
+activos = ["NVDA", "MSFT"]
+tamano_pct = 4
+stop_pct = 3
+habilitacion = "aprobacion"
+params = { entrada = 40, salida = 20 }
