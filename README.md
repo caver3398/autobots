@@ -16,6 +16,14 @@ la central decide y, si corresponde, te pide aprobación.
                                      · bitácora de todo
 ```
 
+## Oficina virtual (en el navegador)
+
+[`web/oficina.html`](web/oficina.html) es la oficina completa en una sola página: las salas con sus bots,
+los mensajes de directores y comité, las órdenes que esperan tu OK, el ranking, los permisos de cada bot,
+las reglas de riesgo editables, las pausas y el kill switch. Usa la misma lógica que el programa de Python,
+con precios simulados y un reloj acelerado (cada ciclo son 5 minutos de mercado). Abrila con doble clic, no
+necesita instalar nada.
+
 ## Cómo decide la central
 
 Cada propuesta termina en uno de tres estados:

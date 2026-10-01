@@ -1,0 +1,858 @@
+<title>Sala de mando</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Sala de operaciones nocturna: barra de mando arriba, salas con escritorios de bots al centro,
+   mensajes a la izquierda, comité (lo que espera tu OK) debajo y controles de emergencia abajo. */
+:root {
+  color-scheme: dark;
+  --bg: #0e1216;
+  --panel: #151a20;
+  --panel-2: #1b2129;
+  --line: #222931;
+  --line-2: #3a434d;
+  --fg: #e8ebe4;
+  --soft: #c7ced5;
+  --muted: #a3acb5;
+  --accent: #c6f432;
+  --on-accent: #0e1216;
+  --up: #34d399;
+  --down: #f87171;
+  --warn: #e0b25b;
+  --info: #7cb0f0;
+  --danger: #b42318;
+  --f-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --f-body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--fg); }
+body { font-family: var(--f-body); font-size: 14px; line-height: 1.45; padding-inline: 16px; padding-block: 0 24px; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.up { color: var(--up); } .down { color: var(--down); } .muted { color: var(--muted); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1480px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+/* barra superior */
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding-block: 18px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo { width: 42px; height: 42px; border-radius: 10px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; }
+.brand b { display: block; font-family: var(--f-display); font-size: 19px; letter-spacing: .02em; }
+.brand small { display: block; font-family: var(--f-display); font-weight: 700; font-size: 11px; letter-spacing: .18em; color: var(--accent); }
+.stats { display: flex; flex-wrap: wrap; gap: 12px 28px; flex: 1; }
+.stat span { display: block; font-size: 11px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+.stat b { font-family: var(--f-mono); font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 12px; color: var(--soft); white-space: nowrap; }
+.pill.sim { border-color: var(--warn); color: var(--warn); font-weight: 600; }
+.pill.kill { background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 600; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+
+/* navegación y reloj */
+nav.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { padding: 9px 16px; border-radius: 10px; border: 0; background: transparent; color: var(--soft); }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.clock { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.clock .when { font-family: var(--f-mono); color: var(--soft); font-size: 13px; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 7px 12px; color: var(--soft); font-size: 13px; min-height: 36px; }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--accent); font-weight: 600; }
+
+/* sala */
+.layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
+.panel h2 { margin: 0; font-family: var(--f-display); font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+.feed { display: flex; flex-direction: column; gap: 12px; position: sticky; top: env(safe-area-inset-top, 0px); }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.filters button { padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--soft); font-size: 12px; }
+.filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.msgs { display: flex; flex-direction: column; gap: 12px; max-height: 760px; overflow-y: auto; padding-right: 4px; font-size: 13px; }
+.msg { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; }
+.msg i { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--info); }
+.msg.op i { background: var(--up); } .msg.rechazo i { background: var(--down); } .msg.pendiente i, .msg.comite i, .msg.vencida i { background: var(--warn); }
+.msg.director i { background: var(--accent); } .msg.control i { background: var(--fg); }
+.msg .who { font-weight: 600; } .msg .meta { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.msg p { margin: 2px 0 0; color: var(--soft); overflow-wrap: anywhere; }
+
+.center { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.room { display: flex; flex-direction: column; gap: 14px; }
+.room-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.room-head .state { font-size: 12px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); vertical-align: 1px; }
+.dot.open { background: var(--up); box-shadow: 0 0 0 3px color-mix(in srgb, var(--up) 25%, transparent); }
+.room-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.room-nums span { display: block; font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.room-nums b { font-family: var(--f-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+.meter { height: 6px; border-radius: 3px; background: var(--line); margin-top: 6px; position: relative; overflow: hidden; }
+.meter > div { position: absolute; inset: 0 auto 0 0; background: var(--info); border-radius: 3px; }
+.meter > div.hot { background: var(--warn); }
+.tickers { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.tick { background: var(--panel-2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.tick .row { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; }
+.tick svg { width: 100%; height: 30px; display: block; }
+.desks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.desk { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; transition: border-color .4s; }
+.desk.flash-buy { border-color: var(--up); } .desk.flash-sell { border-color: var(--info); }
+.desk-top { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; background: var(--line); color: var(--fg); flex-shrink: 0; position: relative; }
+.avatar::after { content: ""; position: absolute; right: -3px; bottom: -3px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--panel-2); background: var(--muted); }
+.avatar.s-pos::after { background: var(--up); } .avatar.s-ok::after { background: var(--warn); } .avatar.s-pausa::after { background: var(--down); } .avatar.s-busca::after { background: var(--info); }
+.desk-top b { display: block; font-family: var(--f-display); font-size: 15px; }
+.desk-top small { display: block; color: var(--muted); font-size: 12px; }
+.tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--soft); white-space: nowrap; }
+.tag.auto { border-color: var(--accent); color: var(--accent); }
+.desk .status { font-size: 12px; font-weight: 600; letter-spacing: .06em; }
+.desk .last { font-size: 12px; color: var(--soft); min-height: 34px; }
+.desk .pos { font-family: var(--f-mono); font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+.desk .foot { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+.committee h2 { color: var(--warn); }
+.cards { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.card { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px; border-radius: 10px; background: var(--panel-2); }
+.card .txt { flex: 1; min-width: 220px; }
+.card .txt b { font-weight: 600; }
+.card .txt p { margin: 2px 0 0; color: var(--soft); font-size: 13px; }
+.card .why { color: var(--warn); font-size: 12px; }
+.btn { min-height: 40px; padding: 8px 16px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel); color: var(--fg); font-size: 13px; }
+.btn:hover { border-color: var(--soft); }
+.btn.yes { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.btn.no { color: var(--soft); }
+.btn.small { min-height: 32px; padding: 4px 10px; font-size: 12px; }
+.empty { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+
+footer.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+footer.controls .grow { flex: 1; }
+.btn.kill { background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 600; }
+.btn.kill.arm { outline: 2px solid #fff; }
+
+/* pestañas secundarias */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.r, th.r { text-align: right; }
+.scroll { overflow-x: auto; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 12px; color: var(--soft); }
+.field input, select { background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 8px; color: var(--fg); padding: 8px 10px; font: inherit; min-height: 38px; }
+.field input { font-family: var(--f-mono); width: 100%; }
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 14px; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.checks label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; min-height: 32px; }
+input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+td input.mini { width: 70px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 8px; color: var(--fg); padding: 6px 8px; font-family: var(--f-mono); }
+.note { color: var(--muted); font-size: 13px; max-width: 75ch; }
+.chart svg { width: 100%; height: auto; display: block; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .feed { position: static; order: 2; }
+  .msgs { max-height: 420px; }
+}
+@media (max-width: 760px) {
+  .rooms, .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .clock { margin-left: 0; }
+  .stat b { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .desk { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">SM</div>
+      <div><b>Oficina virtual</b><small>SALA DE MANDO</small></div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <nav class="bar">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="sala" aria-selected="true">Sala</button>
+      <button class="tab" role="tab" data-tab="ranking" aria-selected="false">Ranking</button>
+      <button class="tab" role="tab" data-tab="bots" aria-selected="false">Bots y habilitaciones</button>
+      <button class="tab" role="tab" data-tab="reglas" aria-selected="false">Reglas de riesgo</button>
+    </div>
+    <div class="clock">
+      <span class="when" id="when"></span>
+      <div class="seg" role="group" aria-label="Velocidad de la simulación" id="speed">
+        <button data-speed="0">Pausa</button>
+        <button data-speed="1">1×</button>
+        <button data-speed="5">5×</button>
+        <button data-speed="30">30×</button>
+      </div>
+    </div>
+  </nav>
+
+  <section id="v-sala">
+    <div class="layout">
+      <aside class="panel feed">
+        <h2>Mensajes</h2>
+        <div class="filters" id="filters">
+          <button data-f="todo" aria-pressed="true">Todo</button>
+          <button data-f="op" aria-pressed="false">Operaciones</button>
+          <button data-f="rechazo" aria-pressed="false">Rechazos</button>
+          <button data-f="pendiente" aria-pressed="false">Esperan OK</button>
+          <button data-f="director" aria-pressed="false">Directores</button>
+          <button data-f="control" aria-pressed="false">Tus acciones</button>
+        </div>
+        <div class="msgs" id="msgs" aria-live="off"></div>
+      </aside>
+      <div class="center">
+        <section class="panel committee" id="committee"></section>
+        <div class="rooms" id="rooms"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-ranking" hidden></section>
+  <section id="v-bots" hidden></section>
+  <section id="v-reglas" hidden></section>
+
+  <footer class="controls">
+    <button class="btn" data-act="pausa-sala" data-sala="cripto" id="b-p-cripto">Pausar sala cripto</button>
+    <button class="btn" data-act="pausa-sala" data-sala="acciones" id="b-p-acciones">Pausar sala acciones</button>
+    <button class="btn" data-act="reabrir">Reabrir todo</button>
+    <button class="btn" data-act="reiniciar" id="b-reset">Reiniciar simulación</button>
+    <div class="grow"></div>
+    <span class="muted" style="font-size:12px">Dinero ficticio · precios simulados</span>
+    <button class="btn kill" data-act="kill" id="b-kill">Kill switch · cerrar todo</button>
+  </footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------- configuración inicial (igual que config.toml del proyecto) ----------
+const ACTIVOS = { cripto: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'], acciones: ['SPY', 'AAPL', 'MSFT', 'NVDA'] };
+const INICIAL = { 'BTC/USDT': 60000, 'ETH/USDT': 3000, 'SOL/USDT': 150, SPY: 550, AAPL: 220, MSFT: 420, NVDA: 120 };
+const NOMBRE_SALA = { cripto: 'Cripto', acciones: 'Acciones' };
+const MONEDA = { cripto: 'USDT', acciones: 'USD' };
+const ESTRATEGIAS = {
+  cruce_medias: 'Cruce de medias',
+  reversion_rsi: 'RSI en sobreventa',
+  ruptura: 'Ruptura de máximos',
+};
+const MIN_POR_CICLO = 5;
+const HISTORIA = 300;
+const CLAVE = 'sala-de-mando-oficina-v1';
+
+function estadoInicial() {
+  const S = {
+    v: 1, seed: 20261005, ciclo: 0,
+    min: Date.UTC(2026, 9, 5, 10, 0) / 60000, // lunes 5/10, 10:00 hora argentina
+    cfg: {
+      perdidaTotalMax: 3, vencimientoMin: 240,
+      salas: {
+        cripto: { capital: 5000, activos: ACTIVOS.cripto.slice(), ordenMax: 10, aprobDesde: 5, expoMax: 60, posMax: 3, perdidaMax: 3, comision: 0.1, desliz: 0.05 },
+        acciones: { capital: 5000, activos: ACTIVOS.acciones.slice(), ordenMax: 10, aprobDesde: 5, expoMax: 70, posMax: 4, perdidaMax: 2, comision: 0.05, desliz: 0.02 },
+      },
+    },
+    bots: [
+      { nombre: 'Tortuga', sala: 'cripto', estrategia: 'cruce_medias', activos: ['BTC/USDT', 'ETH/USDT'], tamano: 4, stop: 3, modo: 'automatico', pausado: false, params: { rapida: 10, lenta: 30 } },
+      { nombre: 'Rebote', sala: 'cripto', estrategia: 'reversion_rsi', activos: ['ETH/USDT', 'SOL/USDT'], tamano: 4, stop: 4, modo: 'automatico', pausado: false, params: { periodo: 14, compra: 30, vende: 55 } },
+      { nombre: 'Halcon', sala: 'cripto', estrategia: 'ruptura', activos: ['BTC/USDT', 'SOL/USDT'], tamano: 6, stop: 3, modo: 'aprobacion', pausado: false, params: { entrada: 40, salida: 20 } },
+      { nombre: 'Indice', sala: 'acciones', estrategia: 'cruce_medias', activos: ['SPY'], tamano: 8, stop: 2, modo: 'automatico', pausado: false, params: { rapida: 20, lenta: 50 } },
+      { nombre: 'Paciente', sala: 'acciones', estrategia: 'reversion_rsi', activos: ['AAPL', 'MSFT'], tamano: 4, stop: 3, modo: 'automatico', pausado: false, params: { periodo: 14, compra: 30, vende: 55 } },
+      { nombre: 'Ruptor', sala: 'acciones', estrategia: 'ruptura', activos: ['NVDA', 'MSFT'], tamano: 4, stop: 3, modo: 'aprobacion', pausado: false, params: { entrada: 40, salida: 20 } },
+    ],
+    precios: {}, efectivo: { cripto: 5000, acciones: 5000 }, pos: {},
+    props: [], comite: [], ops: [], log: [], equity: [],
+    pausa: { cripto: false, acciones: false }, kill: false,
+    inicioDia: null, avisos: {}, espera: {}, ultimo: {}, flash: {}, sigId: 1,
+    abiertoAntes: null,
+  };
+  for (const s of Object.keys(INICIAL)) S.precios[s] = [INICIAL[s]];
+  for (let i = 0; i < HISTORIA - 1; i++) moverPrecios(S, true);
+  return S;
+}
+
+// ---------- azar reproducible ----------
+function azar(S) {
+  let t = (S.seed += 0x6D2B79F5);
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function gauss(S) {
+  const u = Math.max(azar(S), 1e-12), v = azar(S);
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+// ---------- reloj (hora argentina) ----------
+function fecha(min) { return new Date(min * 60000); }
+function claveDia(min) { return fecha(min).toISOString().slice(0, 10); }
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+function hhmm(min) { const d = fecha(min); return String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'); }
+function cuando(min) { const d = fecha(min); return `${DIAS[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1} · ${hhmm(min)}`; }
+// Acciones de EE.UU.: 9:30 a 16:00 de Nueva York = 10:30 a 17:00 en Argentina (sin contar el horario de verano de EE.UU.).
+function abierto(sala, min) {
+  if (sala === 'cripto') return true;
+  const d = fecha(min), dia = d.getUTCDay(), m = d.getUTCHours() * 60 + d.getUTCMinutes();
+  return dia >= 1 && dia <= 5 && m >= 630 && m < 1020;
+}
+
+// ---------- mercado simulado ----------
+function moverPrecios(S, precalentar) {
+  for (const s of Object.keys(S.precios)) {
+    const serie = S.precios[s];
+    const cripto = s.includes('/');
+    if (!cripto && !precalentar && !abierto('acciones', S.min)) continue; // acciones quietas con el mercado cerrado
+    const vol = cripto ? 0.006 : 0.003;
+    const fase = [...s].reduce((a, c) => a + c.charCodeAt(0), 0) % 7;
+    const deriva = 0.0003 * Math.sin((S.ciclo + serie.length) / 40 + fase);
+    serie.push(serie[serie.length - 1] * Math.exp(deriva + vol * gauss(S)));
+    if (serie.length > HISTORIA) serie.shift();
+  }
+}
+const precio = (S, s) => S.precios[s][S.precios[s].length - 1];
+
+// ---------- cuentas ----------
+const claveP = (sala, bot, s) => `${sala}|${bot}|${s}`;
+function posicion(S, sala, bot, s) { return S.pos[claveP(sala, bot, s)] || null; }
+function posiciones(S, sala) {
+  return Object.entries(S.pos).filter(([k]) => !sala || k.startsWith(sala + '|'))
+    .map(([k, p]) => { const [sl, bot, simbolo] = k.split('|'); return { sala: sl, bot, simbolo, ...p }; });
+}
+function expuesto(S, sala) { return posiciones(S, sala).reduce((a, p) => a + p.cantidad * precio(S, p.simbolo), 0); }
+function patrimonio(S, sala) { return S.efectivo[sala] + expuesto(S, sala); }
+function asegurarInicioDia(S) {
+  const dia = claveDia(S.min);
+  if (!S.inicioDia || S.inicioDia.dia !== dia) {
+    if (S.inicioDia) cierreDelDia(S);
+    S.inicioDia = { dia, pat: { cripto: patrimonio(S, 'cripto'), acciones: patrimonio(S, 'acciones') } };
+    S.avisos = {};
+  }
+}
+function perdidaDia(S, sala) { const ini = S.inicioDia.pat[sala]; return ini ? (ini - patrimonio(S, sala)) / ini * 100 : 0; }
+function perdidaTotal(S) {
+  const ini = S.inicioDia.pat.cripto + S.inicioDia.pat.acciones;
+  return (ini - patrimonio(S, 'cripto') - patrimonio(S, 'acciones')) / ini * 100;
+}
+const botPor = (S, n) => S.bots.find(b => b.nombre === n);
+
+// ---------- bitácora ----------
+function anotar(S, tipo, actor, texto, extra) {
+  S.log.push({ id: S.sigId++, min: S.min, tipo, actor, texto, extra: extra || '' });
+  if (S.log.length > 400) S.log.splice(0, S.log.length - 400);
+}
+
+// ---------- estrategias ----------
+const media = a => a.reduce((x, y) => x + y, 0) / a.length;
+function rsi(p, n) {
+  let sube = 0, baja = 0;
+  for (let i = p.length - n; i < p.length; i++) { const c = p[i] - p[i - 1]; if (c > 0) sube += c; else baja -= c; }
+  return baja === 0 ? 100 : 100 - 100 / (1 + sube / baja);
+}
+const ESTR = {
+  cruce_medias: {
+    necesita: b => b.params.lenta + 2,
+    entrar(b, p) {
+      const { rapida: r, lenta: l } = b.params, n = p.length;
+      const r0 = media(p.slice(n - 1 - r, n - 1)), l0 = media(p.slice(n - 1 - l, n - 1));
+      return r0 <= l0 && media(p.slice(-r)) > media(p.slice(-l));
+    },
+    salir: (b, p) => media(p.slice(-b.params.rapida)) < media(p.slice(-b.params.lenta)),
+    porQueEntra: b => `la media ${b.params.rapida} cruzó arriba de la media ${b.params.lenta}`,
+    porQueSale: b => `la media ${b.params.rapida} quedó debajo de la media ${b.params.lenta}`,
+  },
+  reversion_rsi: {
+    necesita: b => b.params.periodo + 1,
+    entrar: (b, p) => rsi(p, b.params.periodo) < b.params.compra,
+    salir: (b, p) => rsi(p, b.params.periodo) > b.params.vende,
+    porQueEntra: (b, p) => `RSI ${rsi(p, b.params.periodo).toFixed(0)}: sobreventa`,
+    porQueSale: (b, p) => `RSI ${rsi(p, b.params.periodo).toFixed(0)}: rebote completado`,
+  },
+  ruptura: {
+    necesita: b => Math.max(b.params.entrada, b.params.salida) + 1,
+    entrar: (b, p) => p[p.length - 1] > Math.max(...p.slice(-b.params.entrada - 1, -1)),
+    salir: (b, p) => p[p.length - 1] < Math.min(...p.slice(-b.params.salida - 1, -1)),
+    porQueEntra: b => `rompió el máximo de ${b.params.entrada} velas`,
+    porQueSale: b => `perdió el mínimo de ${b.params.salida} velas`,
+  },
+};
+function decidir(S, b, s) {
+  const e = ESTR[b.estrategia], p = S.precios[s];
+  if (p.length < e.necesita(b)) return null;
+  const actual = p[p.length - 1], pos = posicion(S, b.sala, b.nombre, s);
+  if (pos) {
+    const perdida = (pos.promedio - actual) / pos.promedio * 100;
+    if (perdida >= b.stop) return { lado: 'venta', cantidad: pos.cantidad, motivo: `stop de pérdida (${fmt(perdida, 1)} %)` };
+    if (e.salir(b, p)) return { lado: 'venta', cantidad: pos.cantidad, motivo: e.porQueSale(b, p) };
+    return null;
+  }
+  if (e.entrar(b, p)) return { lado: 'compra', cantidad: patrimonio(S, b.sala) * b.tamano / 100 / actual, motivo: e.porQueEntra(b, p) };
+  return null;
+}
+
+// ---------- central de habilitaciones ----------
+function evaluar(S, p, aprobadaPorVos) {
+  const rech = [], ok = [];
+  const sala = S.cfg.salas[p.sala], b = botPor(S, p.bot);
+  if (S.kill) rech.push('kill switch activo');
+  if (S.pausa[p.sala]) rech.push(`sala ${NOMBRE_SALA[p.sala]} en pausa`);
+  if (b.pausado) rech.push(`${b.nombre} está en pausa`);
+  if (!sala.activos.includes(p.simbolo)) rech.push(`${p.simbolo} no está habilitado en la sala`);
+  else if (!b.activos.includes(p.simbolo)) rech.push(`${b.nombre} no está habilitado para ${p.simbolo}`);
+  if (!abierto(p.sala, S.min)) rech.push('mercado cerrado');
+  if (p.lado === 'venta') {
+    const pos = posicion(S, p.sala, p.bot, p.simbolo);
+    if (!pos || p.cantidad > pos.cantidad + 1e-12) rech.push('vende más de lo que tiene');
+  } else {
+    const pat = patrimonio(S, p.sala), monto = p.cantidad * p.precio, pct = monto / pat * 100;
+    const costo = monto * (1 + (sala.comision + sala.desliz) / 100);
+    const pd = perdidaDia(S, p.sala), pt = perdidaTotal(S);
+    if (pd >= sala.perdidaMax) rech.push(`la sala ya pierde ${fmt(pd)} % hoy (límite ${fmt(sala.perdidaMax, 1)} %)`);
+    if (pt >= S.cfg.perdidaTotalMax) rech.push(`la oficina ya pierde ${fmt(pt)} % hoy (límite ${fmt(S.cfg.perdidaTotalMax, 1)} %)`);
+    if (pct > sala.ordenMax) rech.push(`la orden es ${fmt(pct, 1)} % del capital, el máximo es ${fmt(sala.ordenMax, 0)} %`);
+    if (costo > S.efectivo[p.sala]) rech.push('no alcanza el efectivo');
+    const expo = (expuesto(S, p.sala) + monto) / pat * 100;
+    if (expo > sala.expoMax) rech.push(`la exposición quedaría en ${fmt(expo, 1)} % (máximo ${fmt(sala.expoMax, 0)} %)`);
+    const abiertos = new Set(posiciones(S, p.sala).map(x => x.simbolo));
+    if (!abiertos.has(p.simbolo) && abiertos.size >= sala.posMax) rech.push(`ya hay ${abiertos.size} activos abiertos (máximo ${sala.posMax})`);
+    if (!aprobadaPorVos) {
+      if (pct >= sala.aprobDesde) ok.push(`la orden es ${fmt(pct, 1)} % del capital (pide OK desde ${fmt(sala.aprobDesde, 0)} %)`);
+      if (b.modo !== 'automatico') ok.push(`${b.nombre} opera con aprobación`);
+    }
+  }
+  if (rech.length) return { v: 'rechazada', motivos: rech };
+  if (ok.length) return { v: 'pendiente', motivos: ok };
+  return { v: 'aprobada', motivos: ['dentro de los límites'] };
+}
+function textoOrden(p, px) { return `${p.lado} ${fmtCant(p.cantidad)} ${p.simbolo} a ${fmt(px || p.precio)}`; }
+function procesar(S, p) {
+  const r = evaluar(S, p, false);
+  p.id = S.sigId++; p.min = S.min; p.decision = r.motivos.join('; ');
+  if (r.v === 'aprobada') { p.estado = 'ejecutada'; ejecutar(S, p, p.precio); }
+  else if (r.v === 'pendiente') { p.estado = 'pendiente'; S.props.push(p); anotar(S, 'pendiente', p.bot, `${textoOrden(p)} · ${p.motivo}`, `Espera tu OK: ${p.decision}`); S.ultimo[p.bot] = 'Esperando tu OK para ' + p.lado + ' ' + p.simbolo; }
+  else { p.estado = 'rechazada'; anotar(S, 'rechazo', 'Central', `${p.bot}: ${textoOrden(p)}`, `Rechazada: ${p.decision}`); S.ultimo[p.bot] = 'Rechazada: ' + r.motivos[0]; }
+  return r;
+}
+function ejecutar(S, p, px) {
+  const sala = S.cfg.salas[p.sala], d = sala.desliz / 100;
+  const lleno = p.lado === 'compra' ? px * (1 + d) : px * (1 - d);
+  const comision = p.cantidad * lleno * sala.comision / 100;
+  const k = claveP(p.sala, p.bot, p.simbolo);
+  let resultado = 0;
+  if (p.lado === 'compra') {
+    const prev = S.pos[k] || { cantidad: 0, promedio: 0 };
+    const cant = prev.cantidad + p.cantidad;
+    S.pos[k] = { cantidad: cant, promedio: (prev.cantidad * prev.promedio + p.cantidad * lleno) / cant, desde: S.min };
+    S.efectivo[p.sala] -= p.cantidad * lleno + comision;
+  } else {
+    const pos = S.pos[k];
+    resultado = (lleno - pos.promedio) * p.cantidad - comision;
+    pos.cantidad -= p.cantidad;
+    if (pos.cantidad <= 1e-12) delete S.pos[k];
+    S.efectivo[p.sala] += p.cantidad * lleno - comision;
+  }
+  S.ops.push({ min: S.min, sala: p.sala, bot: p.bot, simbolo: p.simbolo, lado: p.lado, cantidad: p.cantidad, precio: lleno, resultado });
+  if (S.ops.length > 3000) S.ops.splice(0, S.ops.length - 3000);
+  const extra = p.lado === 'venta' ? `Resultado ${fmtSigno(resultado)} ${MONEDA[p.sala]}` : '';
+  anotar(S, 'op', p.bot, `${textoOrden(p, lleno)} · ${p.motivo}`, extra);
+  S.ultimo[p.bot] = `${p.lado === 'compra' ? 'Compró' : 'Vendió'} ${p.simbolo}: ${p.motivo}`;
+  S.flash[p.bot] = { hasta: S.ciclo + 3, lado: p.lado };
+}
+function procesarAprobadas(S) {
+  for (const p of S.props.filter(x => x.estado === 'aprobada_vos')) {
+    const px = precio(S, p.simbolo);
+    if (p.lado === 'compra') p.cantidad = p.cantidad * p.precio / px; // respeta el monto aprobado
+    else { const pos = posicion(S, p.sala, p.bot, p.simbolo); p.cantidad = Math.min(p.cantidad, pos ? pos.cantidad : 0); }
+    p.precio = px;
+    const r = evaluar(S, p, true);
+    if (r.v === 'rechazada') { p.estado = 'rechazada'; anotar(S, 'rechazo', 'Central', `#${p.id} la aprobaste pero ya no entra en los límites`, r.motivos.join('; ')); }
+    else { p.estado = 'ejecutada'; ejecutar(S, p, px); }
+  }
+  S.props = S.props.filter(x => x.estado === 'pendiente' || x.estado === 'aprobada_vos');
+}
+function vencerPendientes(S) {
+  for (const p of S.props) if (p.estado === 'pendiente' && S.min - p.min >= S.cfg.vencimientoMin) {
+    p.estado = 'vencida';
+    anotar(S, 'pendiente', 'Central', `#${p.id} de ${p.bot} venció sin respuesta`, '');
+  }
+  S.props = S.props.filter(x => x.estado === 'pendiente' || x.estado === 'aprobada_vos');
+}
+function killSwitch(S) {
+  for (const x of posiciones(S)) {
+    ejecutar(S, { bot: x.bot, sala: x.sala, simbolo: x.simbolo, lado: 'venta', cantidad: x.cantidad, precio: precio(S, x.simbolo), motivo: 'kill switch' }, precio(S, x.simbolo));
+  }
+  S.props = []; S.comite = S.comite.filter(c => c.estado !== 'pendiente');
+  S.kill = true;
+  anotar(S, 'control', 'Vos', 'KILL SWITCH: se cerró todo y no se abren nuevas compras', 'Para volver a operar: Reabrir todo');
+}
+
+// ---------- directores y comité ----------
+function directores(S) {
+  const ab = abierto('acciones', S.min);
+  if (S.abiertoAntes !== null && ab !== S.abiertoAntes) {
+    anotar(S, 'director', 'Director Acciones', ab ? 'Abrió el mercado de Nueva York. La sala vuelve a operar.' : 'Cerró el mercado. La sala de acciones queda quieta hasta mañana 10:30.', '');
+  }
+  S.abiertoAntes = ab;
+  for (const sala of ['cripto', 'acciones']) {
+    const pd = perdidaDia(S, sala), lim = S.cfg.salas[sala].perdidaMax;
+    if (pd >= lim && !S.avisos[sala + 'lim']) {
+      S.avisos[sala + 'lim'] = true;
+      anotar(S, 'director', 'Director ' + NOMBRE_SALA[sala], `Llegamos al límite de pérdida del día (${fmt(pd)} %). No se abren compras hasta mañana.`, '');
+    } else if (pd >= lim / 2 && !S.avisos[sala + 'mitad']) {
+      S.avisos[sala + 'mitad'] = true;
+      anotar(S, 'director', 'Director ' + NOMBRE_SALA[sala], `Vamos ${fmt(-pd)} % en el día, la mitad del límite. Atentos.`, '');
+    }
+    const pat = patrimonio(S, sala), expo = pat ? expuesto(S, sala) / pat * 100 : 0;
+    if (expo >= S.cfg.salas[sala].expoMax * 0.85 && !S.avisos[sala + 'expo']) {
+      S.avisos[sala + 'expo'] = true;
+      anotar(S, 'director', 'Director ' + NOMBRE_SALA[sala], `La exposición está en ${fmt(expo, 0)} %, cerca del máximo. Solo entran órdenes chicas.`, '');
+    }
+  }
+}
+function comite(S) {
+  if (S.ciclo % 24 !== 0) return;
+  for (const b of S.bots) {
+    if (b.pausado || S.comite.some(c => c.bot === b.nombre && (c.estado === 'pendiente' || (c.estado === 'rechazada' && S.min - c.min < 1440)))) continue;
+    const cerradas = S.ops.filter(o => o.bot === b.nombre && o.lado === 'venta' && o.min >= S.min - 2880);
+    if (cerradas.length < 6) continue;
+    const ganadas = cerradas.filter(o => o.resultado > 0).length, total = cerradas.reduce((a, o) => a + o.resultado, 0);
+    if (ganadas / cerradas.length < 0.4 && total < 0) {
+      const c = { id: S.sigId++, min: S.min, bot: b.nombre, estado: 'pendiente',
+        texto: `${b.nombre} cerró ${cerradas.length} operaciones en 2 días con ${fmt(ganadas / cerradas.length * 100, 0)} % de acierto y ${fmtSigno(total)} ${MONEDA[b.sala]}. Propongo pausarlo.` };
+      S.comite.push(c);
+      anotar(S, 'director', 'Comité · Estrategia', c.texto, 'Espera tu aprobación');
+    }
+  }
+}
+function cierreDelDia(S) {
+  const ini = S.inicioDia.pat, hoy = { cripto: patrimonio(S, 'cripto'), acciones: patrimonio(S, 'acciones') };
+  const r = (hoy.cripto + hoy.acciones) / (ini.cripto + ini.acciones) * 100 - 100;
+  anotar(S, 'director', 'Comité · Riesgo', `Cierre del día: la oficina terminó ${fmtSigno(r)} % (cripto ${fmtSigno(hoy.cripto / ini.cripto * 100 - 100)} %, acciones ${fmtSigno(hoy.acciones / ini.acciones * 100 - 100)} %).`, '');
+}
+
+// ---------- ciclo ----------
+function ciclo(S) {
+  S.ciclo++; S.min += MIN_POR_CICLO;
+  moverPrecios(S, false);
+  asegurarInicioDia(S);
+  vencerPendientes(S);
+  procesarAprobadas(S);
+  const ocupados = new Set(S.props.map(p => p.bot + '|' + p.simbolo));
+  for (const b of S.bots) {
+    if (b.pausado || S.pausa[b.sala] || S.kill || !abierto(b.sala, S.min)) continue;
+    for (const s of b.activos) {
+      const k = b.nombre + '|' + s;
+      if (ocupados.has(k) || !S.precios[s]) continue;
+      if ((S.espera[k] || 0) > 0) { S.espera[k]--; continue; }
+      const idea = decidir(S, b, s);
+      if (!idea) continue;
+      const p = { bot: b.nombre, sala: b.sala, simbolo: s, lado: idea.lado, cantidad: idea.cantidad, precio: precio(S, s), motivo: idea.motivo };
+      if (procesar(S, p).v === 'rechazada') S.espera[k] = 10;
+    }
+  }
+  directores(S);
+  comite(S);
+  S.equity.push(patrimonio(S, 'cripto') + patrimonio(S, 'acciones'));
+  if (S.equity.length > 1200) S.equity = S.equity.filter((_, i) => i % 2 === 0);
+}
+
+// ---------- formato ----------
+const nf = {};
+function fmt(v, d = 2) { const k = d; nf[k] = nf[k] || new Intl.NumberFormat('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d }); return nf[k].format(v); }
+function fmtSigno(v, d = 2) { return (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v), d); }
+function fmtCant(v) { return v >= 100 ? fmt(v, 2) : v >= 1 ? fmt(v, 4) : String(Number(v.toPrecision(4))).replace('.', ','); }
+function fmtPx(v) { return v >= 1000 ? fmt(v, 0) : fmt(v, 2); }
+const clsSigno = v => v > 0.0001 ? 'up' : v < -0.0001 ? 'down' : '';
+function spark(serie, color) {
+  const n = serie.length, mn = Math.min(...serie), mx = Math.max(...serie), r = mx - mn || 1;
+  const pts = serie.map((v, i) => `${(i / (n - 1) * 100).toFixed(2)},${(28 - (v - mn) / r * 26).toFixed(2)}`).join(' ');
+  return `<svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,30 ${pts} 100,30" fill="${color}" fill-opacity=".12"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.4" vector-effect="non-scaling-stroke"/></svg>`;
+}
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// ---------- estado y guardado ----------
+let S;
+try { const g = JSON.parse(localStorage.getItem(CLAVE)); if (g && g.v === 1) S = g; } catch (e) { /* sin guardado */ }
+if (!S) { S = estadoInicial(); asegurarInicioDia(S); S.abiertoAntes = abierto('acciones', S.min);
+  anotar(S, 'director', 'Comité · Riesgo', 'Buen día. Límite de pérdida diaria: 3 % cripto, 2 % acciones y 3 % la oficina entera. Halcon y Ruptor operan con tu aprobación.', '');
+}
+function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(S)); } catch (e) { /* sin guardado */ } }
+
+// ---------- vista ----------
+const $ = id => document.getElementById(id);
+// Solo reemplaza el contenido si cambió, para no pisar un botón justo cuando lo tocás.
+function poner(el, html) { if (el._html !== html) { el.innerHTML = html; el._html = html; } }
+let tab = 'sala', filtro = 'todo', velocidad = 1, sucio = true, armadoKill = 0;
+
+function vistaHeader() {
+  const pc = patrimonio(S, 'cripto'), pa = patrimonio(S, 'acciones'), tot = pc + pa;
+  const ini = S.cfg.salas.cripto.capital + S.cfg.salas.acciones.capital;
+  const hoy = -perdidaTotal(S), expo = (expuesto(S, 'cripto') + expuesto(S, 'acciones')) / tot * 100;
+  poner($('stats'), `
+    <div class="stat"><span>Patrimonio</span><b>${fmt(tot)}</b></div>
+    <div class="stat"><span>Desde el inicio</span><b class="${clsSigno(tot - ini)}">${fmtSigno((tot / ini - 1) * 100)} %</b></div>
+    <div class="stat"><span>Resultado hoy</span><b class="${clsSigno(hoy)}">${fmtSigno(hoy)} %</b></div>
+    <div class="stat"><span>Pérdida hoy / límite</span><b>${fmt(Math.max(0, -hoy))} / ${fmt(S.cfg.perdidaTotalMax, 0)} %</b></div>
+    <div class="stat"><span>Exposición</span><b>${fmt(expo, 1)} %</b></div>`);
+  const pend = S.props.filter(p => p.estado === 'pendiente').length + S.comite.filter(c => c.estado === 'pendiente').length;
+  poner($('chips'), (S.kill ? '<span class="pill kill">KILL SWITCH</span>' : '<span class="pill on">OPERANDO</span>') +
+    (pend ? `<span class="pill" style="border-color:var(--warn);color:var(--warn)">${pend} esperan tu OK</span>` : '') +
+    '<span class="pill sim">SIMULACIÓN</span>');
+  $('when').textContent = cuando(S.min);
+  $('b-p-cripto').textContent = S.pausa.cripto ? 'Reanudar sala cripto' : 'Pausar sala cripto';
+  $('b-p-acciones').textContent = S.pausa.acciones ? 'Reanudar sala acciones' : 'Pausar sala acciones';
+}
+
+function vistaMensajes() {
+  const lista = S.log.filter(m => filtro === 'todo' || m.tipo === filtro || (filtro === 'rechazo' && m.tipo === 'rechazo')).slice(-120).reverse();
+  poner($('msgs'), lista.length ? lista.map(m => `<div class="msg ${m.tipo}"><i></i><div>
+      <div><span class="who">${m.actor}</span> <span class="meta">${hhmm(m.min)}</span></div>
+      <p>${m.texto}${m.extra ? `<br><span class="muted">${m.extra}</span>` : ''}</p></div></div>`).join('')
+    : '<p class="empty">Todavía no hay mensajes de este tipo.</p>');
+}
+
+function vistaComite() {
+  const pend = S.props.filter(p => p.estado === 'pendiente'), aprob = S.props.filter(p => p.estado === 'aprobada_vos');
+  const com = S.comite.filter(c => c.estado === 'pendiente');
+  let h = `<h2>Comité · esperan tu OK</h2>`;
+  if (!pend.length && !com.length && !aprob.length) {
+    h += `<p class="empty">Nada pendiente. Las órdenes grandes y las de bots con aprobación manual van a aparecer acá; vencen a las ${fmt(S.cfg.vencimientoMin / 60, 0)} h simuladas.</p>`;
+  } else {
+    h += '<div class="cards">';
+    for (const c of com) h += `<div class="card"><div class="txt"><b>Comité · Estrategia</b><p>${c.texto}</p></div>
+      <button class="btn yes" data-act="comite-si" data-id="${c.id}">Pausar ${c.bot}</button><button class="btn no" data-act="comite-no" data-id="${c.id}">Dejarlo operar</button></div>`;
+    for (const p of pend) {
+      h += `<div class="card"><div class="txt"><b>#${p.id} ${p.bot}</b> · ${textoOrden(p)} <span class="muted">(~${fmt(p.cantidad * p.precio)} ${MONEDA[p.sala]})</span>
+        <p>${p.motivo}</p><span class="why">${p.decision} · vence a las ${hhmm(p.min + S.cfg.vencimientoMin)}</span></div>
+        <button class="btn yes" data-act="aprobar" data-id="${p.id}">Aprobar</button><button class="btn no" data-act="rechazar" data-id="${p.id}">Rechazar</button></div>`;
+    }
+    for (const p of aprob) h += `<div class="card"><div class="txt"><b>#${p.id} ${p.bot}</b> · ${textoOrden(p)}<p class="muted">Aprobada: se ejecuta en el próximo ciclo.</p></div></div>`;
+    h += '</div>';
+  }
+  poner($('committee'), h);
+}
+
+function estadoBot(b) {
+  if (b.pausado || S.pausa[b.sala]) return ['s-pausa', 'EN PAUSA', 'down'];
+  if (S.kill) return ['s-pausa', 'BLOQUEADO', 'down'];
+  if (S.props.some(p => p.bot === b.nombre)) return ['s-ok', 'ESPERA TU OK', ''];
+  if (!abierto(b.sala, S.min)) return ['', 'MERCADO CERRADO', 'muted'];
+  if (posiciones(S, b.sala).some(p => p.bot === b.nombre)) return ['s-pos', 'EN POSICIÓN', 'up'];
+  return ['s-busca', 'BUSCANDO SEÑAL', 'muted'];
+}
+
+function vistaSalas() {
+  const cUp = css('--up'), cDown = css('--down');
+  poner($('rooms'), ['cripto', 'acciones'].map(sala => {
+    const cfg = S.cfg.salas[sala], pat = patrimonio(S, sala), pd = -perdidaDia(S, sala);
+    const expo = pat ? expuesto(S, sala) / pat * 100 : 0, ab = abierto(sala, S.min);
+    const ticks = ACTIVOS[sala].map(s => {
+      const serie = S.precios[s].slice(-96), ch = (serie[serie.length - 1] / serie[0] - 1) * 100;
+      return `<div class="tick"><div class="row"><b>${s.replace('/USDT', '')}</b><span class="num ${clsSigno(ch)}">${fmtSigno(ch)} %</span></div>
+        <div class="num" style="font-size:13px">${fmtPx(serie[serie.length - 1])}</div>${spark(serie, ch >= 0 ? cUp : cDown)}</div>`;
+    }).join('');
+    const desks = S.bots.filter(b => b.sala === sala).map(b => {
+      const [cls, txt, col] = estadoBot(b);
+      const ps = posiciones(S, sala).filter(p => p.bot === b.nombre);
+      const real = S.ops.filter(o => o.bot === b.nombre).reduce((a, o) => a + o.resultado, 0);
+      const flash = S.flash[b.nombre] && S.flash[b.nombre].hasta >= S.ciclo ? (S.flash[b.nombre].lado === 'compra' ? 'flash-buy' : 'flash-sell') : '';
+      return `<article class="desk ${flash}">
+        <div class="desk-top"><div class="avatar ${cls}" aria-hidden="true">${b.nombre[0]}</div>
+          <div style="flex:1;min-width:0"><b>${b.nombre}</b><small>${ESTRATEGIAS[b.estrategia]}</small></div>
+          <span class="tag ${b.modo === 'automatico' ? 'auto' : ''}">${b.modo === 'automatico' ? 'auto' : 'con OK'}</span></div>
+        <div class="status ${col}">${txt}</div>
+        <div class="pos">${ps.length ? ps.map(p => { const v = (precio(S, p.simbolo) / p.promedio - 1) * 100; return `<span>${p.simbolo} ${fmtCant(p.cantidad)} <span class="${clsSigno(v)}">${fmtSigno(v)} %</span></span>`; }).join('') : '<span class="muted">Sin posiciones</span>'}</div>
+        <div class="last">${S.ultimo[b.nombre] || 'Mirando ' + b.activos.join(', ')}</div>
+        <div class="foot"><span>Resultado</span><span class="num ${clsSigno(real)}">${fmtSigno(real)} ${MONEDA[sala]}</span></div>
+      </article>`;
+    }).join('');
+    return `<section class="panel room">
+      <div class="room-head"><h2>Sala ${NOMBRE_SALA[sala]}</h2>
+        <span class="state">${S.pausa[sala] ? '<span class="dot"></span>En pausa' : `<span class="dot ${ab ? 'open' : ''}"></span>${sala === 'cripto' ? 'Abierta 24 h' : ab ? 'Mercado abierto' : 'Mercado cerrado (abre 10:30)'}`}</span></div>
+      <div class="room-nums">
+        <div><span>Patrimonio</span><b>${fmt(pat)}</b></div>
+        <div><span>Hoy</span><b class="${clsSigno(pd)}">${fmtSigno(pd)} %</b></div>
+        <div><span>Exposición</span><b>${fmt(expo, 0)} / ${fmt(cfg.expoMax, 0)} %</b>
+          <div class="meter"><div class="${expo > cfg.expoMax * 0.85 ? 'hot' : ''}" style="width:${Math.min(100, expo / cfg.expoMax * 100)}%"></div></div></div>
+      </div>
+      <div class="tickers">${ticks}</div>
+      <div class="desks">${desks}</div>
+    </section>`;
+  }).join(''));
+}
+
+function vistaRanking() {
+  const filas = S.bots.map(b => {
+    const cerradas = S.ops.filter(o => o.bot === b.nombre && o.lado === 'venta');
+    const real = cerradas.reduce((a, o) => a + o.resultado, 0);
+    const abierto_ = posiciones(S, b.sala).filter(p => p.bot === b.nombre).reduce((a, p) => a + (precio(S, p.simbolo) - p.promedio) * p.cantidad, 0);
+    const gan = cerradas.filter(o => o.resultado > 0).length;
+    return { b, real, abierto_, n: cerradas.length, acierto: cerradas.length ? gan / cerradas.length * 100 : null };
+  }).sort((x, y) => (y.real + y.abierto_) - (x.real + x.abierto_));
+  const eq = S.equity.length > 1 ? S.equity : [S.equity[0] || 10000, S.equity[0] || 10000];
+  const W = 800, H = 240, L = 64, R = 12, T = 14, B = 28;
+  let mn = Math.min(...eq), mx = Math.max(...eq); const pad = (mx - mn) * 0.1 || 20; mn -= pad; mx += pad;
+  const x = i => L + i / (eq.length - 1) * (W - L - R), y = v => T + (1 - (v - mn) / (mx - mn)) * (H - T - B);
+  const pts = eq.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const ticks = [0, 1, 2, 3].map(i => mn + (mx - mn) * i / 3);
+  const base = S.cfg.salas.cripto.capital + S.cfg.salas.acciones.capital;
+  const color = eq[eq.length - 1] >= base ? css('--up') : css('--down');
+  const grafico = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Patrimonio total de la oficina a lo largo de la simulación">
+    ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${css('--line')}"/><text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="${css('--muted')}" font-family="JetBrains Mono, monospace">${fmt(v, 0)}</text>`).join('')}
+    ${base > mn && base < mx ? `<line x1="${L}" x2="${W - R}" y1="${y(base)}" y2="${y(base)}" stroke="${css('--muted')}" stroke-dasharray="4 4"/><text x="${W - R}" y="${y(base) - 6}" text-anchor="end" font-size="11" fill="${css('--muted')}">capital inicial</text>` : ''}
+    <polygon points="${L},${H - B} ${pts} ${x(eq.length - 1)},${H - B}" fill="${color}" fill-opacity=".1"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2"/>
+    <circle cx="${x(eq.length - 1)}" cy="${y(eq[eq.length - 1])}" r="4" fill="${color}"/>
+    <text x="${L}" y="${H - 8}" font-size="11" fill="${css('--muted')}">inicio</text><text x="${W - R}" y="${H - 8}" text-anchor="end" font-size="11" fill="${css('--muted')}">ahora</text>
+  </svg>`;
+  $('v-ranking').innerHTML = `<div class="stack">
+    <div class="panel chart"><h2>Patrimonio de la oficina</h2><p class="note">Las dos salas juntas, en dólares. La línea punteada es el capital inicial.</p>${grafico}</div>
+    <div class="panel"><h2>Ranking de bots</h2><div class="scroll"><table>
+      <thead><tr><th>#</th><th>Bot</th><th>Sala</th><th>Estrategia</th><th class="r">Cerrado</th><th class="r">Abierto</th><th class="r">Operaciones</th><th class="r">Acierto</th></tr></thead>
+      <tbody>${filas.map((f, i) => `<tr><td class="num">${i + 1}</td><td><b>${f.b.nombre}</b></td><td>${NOMBRE_SALA[f.b.sala]}</td><td>${ESTRATEGIAS[f.b.estrategia]}</td>
+        <td class="r num ${clsSigno(f.real)}">${fmtSigno(f.real)}</td><td class="r num ${clsSigno(f.abierto_)}">${fmtSigno(f.abierto_)}</td>
+        <td class="r num">${f.n}</td><td class="r num">${f.acierto === null ? '–' : fmt(f.acierto, 0) + ' %'}</td></tr>`).join('')}</tbody></table></div>
+      <p class="note">Cerrado: ganancia o pérdida de operaciones terminadas, ya descontadas las comisiones. Abierto: lo que ganan o pierden las posiciones que siguen abiertas.</p></div>
+  </div>`;
+}
+
+function vistaBots() {
+  $('v-bots').innerHTML = `<div class="panel"><h2>Bots y habilitaciones</h2>
+    <p class="note">Automático: opera solo dentro de los límites de la sala. Con OK: cada compra espera tu aprobación. Las órdenes que superan el umbral de la sala siempre piden OK, aunque el bot sea automático. Un bot solo puede operar los activos tildados, y además el activo tiene que estar habilitado en su sala.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Bot</th><th>Sala</th><th>Estrategia</th><th>Modo</th><th class="r">Tamaño %</th><th class="r">Stop %</th><th>Activos habilitados</th><th>Estado</th></tr></thead>
+      <tbody>${S.bots.map((b, i) => `<tr>
+        <td><b>${b.nombre}</b></td><td>${NOMBRE_SALA[b.sala]}</td><td>${ESTRATEGIAS[b.estrategia]}</td>
+        <td><select id="modo-${i}" data-bot="${i}" data-campo="modo" aria-label="Modo de ${b.nombre}">
+          <option value="automatico" ${b.modo === 'automatico' ? 'selected' : ''}>Automático</option>
+          <option value="aprobacion" ${b.modo !== 'automatico' ? 'selected' : ''}>Con OK</option></select></td>
+        <td class="r"><input class="mini" id="tam-${i}" type="number" min="0.5" max="50" step="0.5" value="${b.tamano}" data-bot="${i}" data-campo="tamano" aria-label="Tamaño de orden de ${b.nombre}"></td>
+        <td class="r"><input class="mini" id="stop-${i}" type="number" min="0.5" max="50" step="0.5" value="${b.stop}" data-bot="${i}" data-campo="stop" aria-label="Stop de ${b.nombre}"></td>
+        <td><div class="checks">${ACTIVOS[b.sala].map(s => `<label><input type="checkbox" id="act-${i}-${s}" data-bot="${i}" data-activo="${s}" ${b.activos.includes(s) ? 'checked' : ''}>${s.replace('/USDT', '')}</label>`).join('')}</div></td>
+        <td><button class="btn small" data-act="pausa-bot" data-bot="${i}">${b.pausado ? 'Reanudar' : 'Pausar'}</button></td>
+      </tr>`).join('')}</tbody></table></div></div>`;
+}
+
+function vistaReglas() {
+  const campos = [['ordenMax', 'Orden máxima (% del capital)'], ['aprobDesde', 'Pide tu OK desde (%)'], ['expoMax', 'Exposición máxima (%)'], ['posMax', 'Activos abiertos a la vez'], ['perdidaMax', 'Pérdida diaria máxima (%)']];
+  $('v-reglas').innerHTML = `<div class="stack">
+    <div class="panel"><h2>Toda la oficina</h2>
+      <div class="fields">
+        <div class="field"><label for="g-perdida">Pérdida diaria máxima total (%)</label><input id="g-perdida" type="number" step="0.5" min="0.5" value="${S.cfg.perdidaTotalMax}" data-global="perdidaTotalMax"></div>
+        <div class="field"><label for="g-venc">Una orden sin respuesta vence a los (min simulados)</label><input id="g-venc" type="number" step="30" min="30" value="${S.cfg.vencimientoMin}" data-global="vencimientoMin"></div>
+      </div>
+      <p class="note">Si la oficina pierde ese porcentaje en el día, ninguna sala abre compras hasta el día siguiente. Las ventas siempre se permiten porque bajan el riesgo.</p></div>
+    <div class="grid2">${['cripto', 'acciones'].map(sala => `<div class="panel"><h2>Sala ${NOMBRE_SALA[sala]}</h2>
+      <div class="fields">${campos.map(([k, t]) => `<div class="field"><label for="r-${sala}-${k}">${t}</label><input id="r-${sala}-${k}" type="number" step="${k === 'posMax' ? 1 : 0.5}" min="${k === 'posMax' ? 1 : 0.5}" value="${S.cfg.salas[sala][k]}" data-sala="${sala}" data-regla="${k}"></div>`).join('')}</div>
+      <p class="note" style="margin-top:14px">Activos habilitados en la sala:</p>
+      <div class="checks">${ACTIVOS[sala].map(s => `<label><input type="checkbox" id="h-${sala}-${s}" data-sala="${sala}" data-habilita="${s}" ${S.cfg.salas[sala].activos.includes(s) ? 'checked' : ''}>${s}</label>`).join('')}</div>
+      <p class="note">Comisión ${fmt(S.cfg.salas[sala].comision)} % y deslizamiento ${fmt(S.cfg.salas[sala].desliz)} % por operación. ${sala === 'acciones' ? 'Opera de lunes a viernes de 10:30 a 17:00, hora argentina.' : 'Opera las 24 horas.'}</p></div>`).join('')}</div>
+    <div class="panel"><h2>Cómo decide la central</h2>
+      <p class="note">Cada orden de un bot pasa por la central. Se <b>rechaza</b> si hay kill switch, pausa, activo no habilitado, mercado cerrado, límite de pérdida alcanzado, orden demasiado grande, falta de efectivo, exposición excedida o demasiados activos abiertos. Si nada la rechaza pero supera el umbral de OK o el bot opera con aprobación, <b>espera tu OK</b>. Si no, <b>se ejecuta sola</b>. Lo que aprobás se vuelve a chequear con el precio del momento antes de ejecutarse.</p></div>
+  </div>`;
+}
+
+function render() {
+  vistaHeader();
+  if (tab === 'sala') { vistaComite(); vistaSalas(); vistaMensajes(); }
+  else if (tab === 'ranking') vistaRanking();
+  sucio = false;
+}
+
+// ---------- interacción ----------
+document.addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.tab) {
+    tab = t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b === t)));
+    ['sala', 'ranking', 'bots', 'reglas'].forEach(v => { $('v-' + v).hidden = v !== tab; });
+    if (tab === 'bots') vistaBots(); if (tab === 'reglas') vistaReglas();
+    render(); return;
+  }
+  if (t.dataset.speed !== undefined) { velocidad = +t.dataset.speed; marcarVelocidad(); return; }
+  if (t.dataset.f) { filtro = t.dataset.f; document.querySelectorAll('#filters button').forEach(b => b.setAttribute('aria-pressed', String(b === t))); vistaMensajes(); return; }
+  const act = t.dataset.act; if (!act) return;
+  const id = +t.dataset.id;
+  if (act === 'aprobar' || act === 'rechazar') {
+    const p = S.props.find(x => x.id === id && x.estado === 'pendiente'); if (!p) return;
+    if (act === 'aprobar') { p.estado = 'aprobada_vos'; anotar(S, 'control', 'Vos', `Aprobaste #${id}: ${textoOrden(p)} de ${p.bot}`, 'Se ejecuta en el próximo ciclo'); }
+    else { p.estado = 'rechazada'; S.props = S.props.filter(x => x !== p); S.espera[p.bot + '|' + p.simbolo] = 10; S.ultimo[p.bot] = 'Rechazaste su orden de ' + p.simbolo; anotar(S, 'control', 'Vos', `Rechazaste #${id} de ${p.bot}`, ''); }
+  } else if (act === 'comite-si' || act === 'comite-no') {
+    const c = S.comite.find(x => x.id === id); if (!c) return;
+    if (act === 'comite-si') { c.estado = 'aprobada'; botPor(S, c.bot).pausado = true; anotar(S, 'control', 'Vos', `Aprobaste pausar a ${c.bot}`, 'Lo podés reanudar en Bots y habilitaciones'); }
+    else { c.estado = 'rechazada'; c.min = S.min; anotar(S, 'control', 'Vos', `${c.bot} sigue operando`, 'El comité no lo vuelve a proponer por un día'); }
+  } else if (act === 'pausa-sala') {
+    const s = t.dataset.sala; S.pausa[s] = !S.pausa[s];
+    anotar(S, 'control', 'Vos', `${S.pausa[s] ? 'Pausaste' : 'Reanudaste'} la sala ${NOMBRE_SALA[s]}`, S.pausa[s] ? 'Las posiciones abiertas quedan como están' : '');
+  } else if (act === 'pausa-bot') {
+    const b = S.bots[+t.dataset.bot]; b.pausado = !b.pausado;
+    anotar(S, 'control', 'Vos', `${b.pausado ? 'Pausaste' : 'Reanudaste'} a ${b.nombre}`, ''); vistaBots();
+  } else if (act === 'reabrir') {
+    S.kill = false; S.pausa.cripto = S.pausa.acciones = false;
+    anotar(S, 'control', 'Vos', 'Reabriste la oficina: salas activas y kill switch apagado', '');
+  } else if (act === 'kill') {
+    if (S.kill) return;
+    if (Date.now() - armadoKill > 4000) { armadoKill = Date.now(); t.classList.add('arm'); t.textContent = 'Confirmar: cerrar todo'; setTimeout(() => { t.classList.remove('arm'); t.textContent = 'Kill switch · cerrar todo'; }, 4000); return; }
+    armadoKill = 0; t.classList.remove('arm'); t.textContent = 'Kill switch · cerrar todo';
+    killSwitch(S);
+  } else if (act === 'reiniciar') {
+    if (t.dataset.armado !== '1') { t.dataset.armado = '1'; t.textContent = 'Confirmar reinicio'; setTimeout(() => { t.dataset.armado = ''; t.textContent = 'Reiniciar simulación'; }, 4000); return; }
+    t.dataset.armado = ''; t.textContent = 'Reiniciar simulación';
+    S = estadoInicial(); asegurarInicioDia(S); S.abiertoAntes = abierto('acciones', S.min);
+    anotar(S, 'control', 'Vos', 'Reiniciaste la simulación: 5.000 USDT en cripto y 5.000 USD en acciones', '');
+    if (tab === 'bots') vistaBots(); if (tab === 'reglas') vistaReglas();
+  }
+  guardar(); render();
+});
+
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.bot !== undefined && !el.matches('button')) {
+    const b = S.bots[+el.dataset.bot];
+    if (el.dataset.activo) {
+      const s = el.dataset.activo;
+      b.activos = el.checked ? [...new Set([...b.activos, s])] : b.activos.filter(x => x !== s);
+      anotar(S, 'control', 'Vos', `${el.checked ? 'Habilitaste' : 'Quitaste'} ${s} ${el.checked ? 'para' : 'a'} ${b.nombre}`, '');
+    } else if (el.dataset.campo === 'modo') {
+      b.modo = el.value; anotar(S, 'control', 'Vos', `${b.nombre} ahora opera ${b.modo === 'automatico' ? 'en automático' : 'con tu aprobación'}`, '');
+    } else {
+      const v = parseFloat(el.value); if (!(v > 0)) { el.value = b[el.dataset.campo]; return; }
+      b[el.dataset.campo] = v; anotar(S, 'control', 'Vos', `${b.nombre}: ${el.dataset.campo === 'tamano' ? 'tamaño de orden' : 'stop'} ${fmt(v, 1)} %`, '');
+    }
+  } else if (el.dataset.regla) {
+    const v = parseFloat(el.value), sala = S.cfg.salas[el.dataset.sala];
+    if (!(v > 0)) { el.value = sala[el.dataset.regla]; return; }
+    sala[el.dataset.regla] = el.dataset.regla === 'posMax' ? Math.round(v) : v;
+    anotar(S, 'control', 'Vos', `Cambiaste una regla de la sala ${NOMBRE_SALA[el.dataset.sala]}: ${el.labels[0].textContent} = ${el.value}`, '');
+  } else if (el.dataset.habilita) {
+    const sala = S.cfg.salas[el.dataset.sala], s = el.dataset.habilita;
+    sala.activos = el.checked ? [...new Set([...sala.activos, s])] : sala.activos.filter(x => x !== s);
+    anotar(S, 'control', 'Vos', `${el.checked ? 'Habilitaste' : 'Deshabilitaste'} ${s} en la sala ${NOMBRE_SALA[el.dataset.sala]}`, '');
+  } else if (el.dataset.global) {
+    const v = parseFloat(el.value); if (!(v > 0)) { el.value = S.cfg[el.dataset.global]; return; }
+    S.cfg[el.dataset.global] = v; anotar(S, 'control', 'Vos', `Cambiaste ${el.labels[0].textContent} a ${el.value}`, '');
+  } else return;
+  guardar(); sucio = true;
+});
+
+function marcarVelocidad() { document.querySelectorAll('#speed button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.speed === velocidad))); }
+marcarVelocidad();
+
+// ---------- bucle ----------
+const CICLOS_POR_SEG = { 0: 0, 1: 0.7, 5: 4, 30: 20 };
+let acum = 0, antes = performance.now(), ultimoRender = 0, ultimoGuardado = 0;
+function cuadro(ahora) {
+  const dt = Math.min(1, (ahora - antes) / 1000); antes = ahora;
+  acum += dt * CICLOS_POR_SEG[velocidad];
+  let n = 0;
+  while (acum >= 1 && n < 40) { ciclo(S); acum -= 1; n++; }
+  if (n) sucio = true;
+  if (sucio && ahora - ultimoRender > 180) { render(); ultimoRender = ahora; }
+  if (ahora - ultimoGuardado > 3000) { guardar(); ultimoGuardado = ahora; }
+  requestAnimationFrame(cuadro);
+}
+render();
+requestAnimationFrame(cuadro);
+})();
+</script>
