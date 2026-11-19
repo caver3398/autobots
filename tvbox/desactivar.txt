@@ -1,0 +1,28 @@
+# Apps que se DESACTIVAN con la opcion 2 (Optimizar).
+# Desactivar NO borra nada: se revierte con la opcion 6 (Restaurar).
+# Una app por linea. Las lineas que empiezan con # se ignoran.
+# Si alguna no esta instalada en tu equipo, simplemente se saltea.
+#
+# NO agregues: launcher, tvsettings, settings, systemui, gms, gsf, vending,
+# packageinstaller, inputmethod/teclado, ni nada del fabricante que no conozcas.
+
+# --- Impresion (un TV Box no imprime) ---
+com.android.printspooler
+com.android.bips
+com.android.printservice.recommendation
+com.google.android.printservice.recommendation
+
+# --- Apps de celular que no sirven en una TV ---
+com.android.calendar
+com.android.email
+com.android.deskclock
+com.android.camera2
+com.android.soundrecorder
+com.android.calculator2
+com.android.quicksearchbox
+
+# --- Protectores de pantalla y fondos animados ---
+com.android.dreams.basic
+com.android.dreams.phototable
+com.android.wallpaper.livepicker
+com.android.wallpapercropper
