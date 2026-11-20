@@ -28,7 +28,18 @@ while true; do
   "$ADB" disconnect "$DEV" >/dev/null 2>&1
 done
 
+protegida() { grep -v '^\s*$' proteger.txt | tr -d '\r' | grep -qiF -f - <<<"$1"; }
+respaldo() {
+  mkdir -p respaldo; local hay=""
+  for p in $(sh_ pm list packages | tr -d '\r' | sed 's/^package://' | grep -iF -f <(grep -v '^\s*$' proteger.txt | tr -d '\r')); do
+    hay=1; mkdir -p "respaldo/$p"
+    for a in $(sh_ pm path "$p" | tr -d '\r' | sed 's/^package://'); do "$ADB" -s "$DEV" pull "$a" "respaldo/$p/" >/dev/null; done
+    echo "  Respaldada: $p (carpeta respaldo/$p)"
+  done
+  [ -z "$hay" ] && echo "  No encontre ninguna app con 'point' en el nombre. Pasale reporte.txt a Claude."
+}
 desactivar() {
+  protegida "$1" && { echo "  PROTEGIDA, no se toca: $1"; return; }
   sh_ pm path "$1" 2>/dev/null | grep -q '^package:' || { echo "  (no esta instalada) $1"; return; }
   if sh_ pm disable-user --user 0 "$1" 2>/dev/null | grep -q disabled; then
     echo "$1" >> desactivadas.log; echo "  Desactivada: $1"
@@ -46,6 +57,7 @@ while true; do
  5. Desactivar una app puntual
  6. Restaurar todo como estaba
  7. Reiniciar el TV Box
+ 8. Respaldar la app Point en la PC (carpeta respaldo)
  0. Salir
 EOF
   read -r -p "Opcion: " OP
@@ -63,7 +75,8 @@ EOF
          echo; echo "===== APPS DESACTIVADAS ====="; sh_ pm list packages -d
        } > reporte.txt 2>&1
        echo "Listo: reporte.txt (pasaselo a Claude)." ;;
-    2) for k in window_animation_scale transition_animation_scale animator_duration_scale; do
+    2) echo "Respaldo de seguridad de las apps protegidas (Point)..."; respaldo
+       for k in window_animation_scale transition_animation_scale animator_duration_scale; do
          sh_ settings put global $k 0.5; done
        sh_ settings put secure screensaver_enabled 0
        sh_ pm trim-caches 999G
@@ -84,6 +97,7 @@ EOF
        fi
        echo "Todo restaurado." ;;
     7) "$ADB" -s "$DEV" reboot; echo "Reiniciando."; exit 0 ;;
+    8) respaldo ;;
     0) "$ADB" disconnect "$DEV" >/dev/null 2>&1; exit 0 ;;
   esac
 done

@@ -67,6 +67,7 @@ Desde el control remoto, en el TV Box:
 
 ## ⚠️ Importante sobre este equipo
 
+- **La app Point está protegida**: el kit nunca la desactiva (lista `proteger.txt`) y antes de optimizar guarda una copia del instalador en la carpeta `respaldo` de tu PC.
 - Dice "Android 14" pero es **Android 10** con firmware de prueba (`userdebug / test-keys`) y su último parche de seguridad es de **diciembre de 2019**.
 - Equipos así a veces vienen con malware de fábrica. **No inicies sesión con tu cuenta principal de Google** ni lo uses para bancos o compras.
 - Para una mejora de verdad: un **Chromecast con Google TV / Google TV Streamer / Fire TV Stick** es mucho más rápido y seguro.

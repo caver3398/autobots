@@ -77,6 +77,7 @@ echo   4. Ver las apps instaladas
 echo   5. Desactivar una app puntual
 echo   6. Restaurar todo como estaba
 echo   7. Reiniciar el TV Box
+echo   8. Respaldar la app Point en la PC  (carpeta "respaldo")
 echo   0. Salir
 echo.
 set "OP="
@@ -88,6 +89,7 @@ if "%OP%"=="4" goto ver_apps
 if "%OP%"=="5" goto puntual
 if "%OP%"=="6" goto restaurar
 if "%OP%"=="7" goto reiniciar
+if "%OP%"=="8" goto respaldo_menu
 if "%OP%"=="0" goto salir
 goto menu
 
@@ -132,6 +134,8 @@ goto menu
 
 :optimizar
 echo.
+echo [0/5] Respaldo de seguridad de las apps protegidas (Point)...
+call :respaldo
 echo [1/5] Animaciones al doble de rapido...
 %ADBS% settings put global window_animation_scale 0.5
 %ADBS% settings put global transition_animation_scale 0.5
@@ -150,6 +154,12 @@ pause
 goto menu
 
 :desactivar
+rem Nunca tocar las apps protegidas (proteger.txt, ej. Point)
+echo %1| findstr /i /l /g:"proteger.txt" >nul
+if not errorlevel 1 (
+  echo   PROTEGIDA, no se toca: %1
+  goto :eof
+)
 %ADBS% pm path %1 2>nul | findstr /b "package:" >nul
 if errorlevel 1 (
   echo   ^(no esta instalada^) %1
@@ -162,6 +172,30 @@ if errorlevel 1 (
 )
 >>desactivadas.log echo %1
 echo   Desactivada: %1
+goto :eof
+
+:respaldo_menu
+call :respaldo
+pause
+goto menu
+
+:respaldo
+if not exist "respaldo" mkdir "respaldo"
+%ADBS% pm list packages > "%TEMP%\tvbox_pk.txt"
+findstr /i /l /g:"proteger.txt" "%TEMP%\tvbox_pk.txt" > "%TEMP%\tvbox_prot.txt"
+set "HAY="
+for /f "usebackq tokens=2 delims=:" %%p in ("%TEMP%\tvbox_prot.txt") do (
+  set "HAY=1"
+  call :respaldar_pkg %%p
+)
+if not defined HAY echo   No encontre ninguna app con "point" en el nombre. Pasale reporte.txt a Claude.
+goto :eof
+
+:respaldar_pkg
+if not exist "respaldo\%1" mkdir "respaldo\%1"
+%ADBS% pm path %1 > "%TEMP%\tvbox_path.txt"
+for /f "usebackq tokens=2 delims=:" %%a in ("%TEMP%\tvbox_path.txt") do "%ADB%" -s %DEV% pull %%a "respaldo\%1" >nul
+echo   Respaldada: %1  ^(carpeta respaldo\%1^)
 goto :eof
 
 :instalar
