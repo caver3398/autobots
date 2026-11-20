@@ -28,7 +28,7 @@ while true; do
   "$ADB" disconnect "$DEV" >/dev/null 2>&1
 done
 
-protegida() { grep -v '^\s*$' proteger.txt | tr -d '\r' | grep -qiF -f - <<<"$1"; }
+protegida() { printf '%s\n' "$1" | grep -qiF -f <(grep -v '^\s*$' proteger.txt | tr -d '\r'); }
 respaldo() {
   mkdir -p respaldo; local hay=""
   for p in $(sh_ pm list packages | tr -d '\r' | sed 's/^package://' | grep -iF -f <(grep -v '^\s*$' proteger.txt | tr -d '\r')); do
